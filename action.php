@@ -14,6 +14,29 @@ require_once(DOKU_PLUGIN.'action.php');
 
 class action_plugin_redirect extends DokuWiki_Action_Plugin {
 
+    var $ConfFile;  // path/to/redirect.conf
+
+    function __construct() {
+        // conf path option
+        $confPath = array(
+            0 => dirname(__FILE__).'/redirect.conf',
+            1 => DOKU_CONF.'redirect.conf',
+        );
+
+        // set ConfFile
+        switch ($this->getConf('conf_path')) {
+            case 1:
+                $this->ConfFile = $confPath[1];
+                break;
+            default:
+                if(defined('DOKU_FARMDIR')) {
+                    $this->ConfFile = $confPath[1]; // store in each animal's conf directory
+                } else {
+                    $this->ConfFile = $confPath[0];
+                }
+        }
+    }
+
     /**
      * register the eventhandlers
      */
@@ -29,12 +52,11 @@ class action_plugin_redirect extends DokuWiki_Action_Plugin {
      * handle event
      */
     function handle_start(&$event, $param){
-        global $ID;
-        global $ACT;
+        global $ID, $ACT;
 
         if($ACT != 'show') return;
 
-        $redirects = confToHash(dirname(__FILE__).'/redirect.conf');
+        $redirects = confToHash($this->ConfFile);
         if($redirects[$ID]){
             if(preg_match('/^https?:\/\//',$redirects[$ID])){
                 send_redirect($redirects[$ID]);

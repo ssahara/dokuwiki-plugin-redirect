@@ -11,6 +11,34 @@ require_once(DOKU_PLUGIN.'admin.php');
  */
 class admin_plugin_redirect extends DokuWiki_Admin_Plugin {
 
+    var $ConfFile;  // path/to/redirect.conf
+
+    function __construct() {
+        // conf path option
+        $confPath = array(
+            0 => dirname(__FILE__).'/redirect.conf',
+            1 => DOKU_CONF.'redirect.conf',
+        );
+
+        // set ConfFile
+        switch ($this->getConf('conf_path')) {
+            case 1:
+                $this->ConfFile = $confPath[1];
+                // copy redirect.conf
+                if (!file_exists($confPath[1]) && file_exists($confPath[0])) {
+                    $map = io_readFile($confPath[0]);
+                    io_saveFile($confPath[1], $map);
+                }
+                break;
+            default:
+                if(defined('DOKU_FARMDIR')) {
+                    $this->ConfFile = $confPath[1]; // store in each animal's conf directory
+                } else {
+                    $this->ConfFile = $confPath[0];
+                }
+        }
+    }
+
     /**
      * Access for managers allowed
      */
@@ -37,7 +65,7 @@ class admin_plugin_redirect extends DokuWiki_Admin_Plugin {
      */
     function handle() {
         if($_POST['redirdata']){
-            if(io_saveFile(dirname(__FILE__).'/redirect.conf',cleanText($_POST['redirdata']))){
+            if(io_saveFile($this->ConfFile, cleanText($_POST['redirdata']))){
                 msg($this->getLang('saved'),1);
             }
         }
@@ -53,7 +81,7 @@ class admin_plugin_redirect extends DokuWiki_Admin_Plugin {
         echo '<input type="hidden" name="do" value="admin" />';
         echo '<input type="hidden" name="page" value="redirect" />';
         echo '<textarea class="edit" rows="15" cols="80" style="height: 300px" name="redirdata">';
-        echo formtext(io_readFile(dirname(__FILE__).'/redirect.conf'));
+        echo formtext(io_readFile($this->ConfFile));
         echo '</textarea><br />';
         echo '<input type="submit" value="'.$lang['btn_save'].'" class="button" />';
         echo '</form>';
