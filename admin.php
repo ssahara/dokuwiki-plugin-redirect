@@ -16,27 +16,20 @@ class admin_plugin_redirect extends DokuWiki_Admin_Plugin {
     function __construct() {
         // conf path option
         $confPath = array(
-            0 => dirname(__FILE__).'/redirect.conf',
-            1 => DOKU_CONF.'redirect.conf',
+            'legacy'     => dirname(__FILE__).'/redirect.conf', // to be deprecated
+            'default'    => DOKU_CONF.'redirect.conf',
+            'local'      => DOKU_CONF.'redirect.local.conf',
         );
 
-        // set ConfFile
-        switch ($this->getConf('conf_path')) {
-            case 1:
-                $this->ConfFile = $confPath[1];
-                // copy redirect.conf
-                if (!file_exists($confPath[1]) && file_exists($confPath[0])) {
-                    $map = io_readFile($confPath[0]);
-                    io_saveFile($confPath[1], $map);
-                }
-                break;
-            default:
-                if(defined('DOKU_FARMDIR')) {
-                    $this->ConfFile = $confPath[1]; // store in each animal's conf directory
-                } else {
-                    $this->ConfFile = $confPath[0];
-                }
+        // copy redirect.conf from legacy to local
+        if (!file_exists($confPath['local']) && file_exists($confPath['legacy'])) {
+            $map = io_readFile($confPath['legacy']);
+            io_saveFile($confPath['local'], $map);
+            io_saveFile($confPath['legacy'], ''); // legacy file is now blank
         }
+
+        // set ConfFile
+        $this->ConfFile = $confPath['local'];
     }
 
     /**

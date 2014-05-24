@@ -14,27 +14,17 @@ require_once(DOKU_PLUGIN.'action.php');
 
 class action_plugin_redirect extends DokuWiki_Action_Plugin {
 
-    var $ConfFile;  // path/to/redirect.conf
+    var $redirects;
 
     function __construct() {
-        // conf path option
-        $confPath = array(
-            0 => dirname(__FILE__).'/redirect.conf',
-            1 => DOKU_CONF.'redirect.conf',
-        );
-
-        // set ConfFile
-        switch ($this->getConf('conf_path')) {
-            case 1:
-                $this->ConfFile = $confPath[1];
-                break;
-            default:
-                if(defined('DOKU_FARMDIR')) {
-                    $this->ConfFile = $confPath[1]; // store in each animal's conf directory
-                } else {
-                    $this->ConfFile = $confPath[0];
-                }
-        }
+        global $config_cascade;
+        $config_cascade = array_merge( $config_cascade, array(
+            'redirects' => array(
+                'default' => array(DOKU_CONF.'redirect.conf'),
+                'local'   => array(DOKU_CONF.'redirect.local.conf'),
+            ),
+        ));
+        $this->redirects = retrieveConfig('redirects','confToHash');
     }
 
     /**
@@ -56,15 +46,14 @@ class action_plugin_redirect extends DokuWiki_Action_Plugin {
 
         if($ACT != 'show') return;
 
-        $redirects = confToHash($this->ConfFile);
-        if($redirects[$ID]){
-            if(preg_match('/^https?:\/\//',$redirects[$ID])){
-                send_redirect($redirects[$ID]);
+        if($this->redirects[$ID]){
+            if(preg_match('/^https?:\/\//',$this->redirects[$ID])){
+                send_redirect($this->redirects[$ID]);
             }else{
                 if($this->getConf('showmsg')){
                     msg(sprintf($this->getLang('redirected'),hsc($ID)));
                 }
-                $link = explode('#', $redirects[$ID], 2);
+                $link = explode('#', $this->redirects[$ID], 2);
                 send_redirect(wl($link[0] ,'',true) . '#' . rawurlencode($link[1]));
             }
             exit;
