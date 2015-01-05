@@ -35,6 +35,9 @@ class action_plugin_redirect extends DokuWiki_Action_Plugin {
 
         if ($ACT != 'show') return;
 
+        // return if redirection is temporarily disabled by url paramter
+        if (isset($_GET['redirect']) && $_GET['redirect'] == 'no') return;
+
         $redirects = confToHash($this->ConfFile);
         if ($redirects[$ID]) {
             if (preg_match('/^https?:\/\//',$redirects[$ID])) {
